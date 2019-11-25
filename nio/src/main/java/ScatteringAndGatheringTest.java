@@ -27,12 +27,12 @@ public class ScatteringAndGatheringTest {
         byteBuffers[1] = ByteBuffer.allocate(3);
 
         // 等客户端连接（Telnet）
-        SocketChannel scoketChannel = serverSocketChannel.accept();
+        SocketChannel socketChannel = serverSocketChannel.accept();
         long msgLength = 8; // 假定从客户端接收8个字节
         while (true) {
             int byteRead = 0;
             while (byteRead < msgLength) {
-                long read = scoketChannel.read(byteBuffers);
+                long read = socketChannel.read(byteBuffers);
                 byteRead += read;
                 System.out.println("byteRead = " + byteRead);
                 // 查看当前buffer的position和limit
@@ -48,7 +48,7 @@ public class ScatteringAndGatheringTest {
             // 将数据显示到客户端
             long byteWrite = 0;
             while (byteWrite < msgLength) {
-                long write = scoketChannel.write(byteBuffers);
+                long write = socketChannel.write(byteBuffers);
                 byteWrite += write;
             }
 
