@@ -31,6 +31,7 @@ public class NIOServer {
             // 如果返回>0，就获取相关的selectionKey集合
             Set<SelectionKey> selectionKeys = selector.selectedKeys();
             Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
+            System.out.println("selectionkeys size : " + selectionKeys.size());
 
             while (keyIterator.hasNext()) {
                 SelectionKey key = keyIterator.next();
