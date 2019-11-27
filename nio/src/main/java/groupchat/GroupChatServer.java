@@ -14,11 +14,11 @@ import java.util.Set;
  */
 public class GroupChatServer {
 
-    private Selector selector;
+    private static Selector selector;
 
-    private ServerSocketChannel serverSocketChannel;
+    private static ServerSocketChannel serverSocketChannel;
 
-    private static final int PORT = 8888;
+    private static final int PORT = 8777;
 
     public GroupChatServer() throws IOException {
         selector = Selector.open();
@@ -33,19 +33,18 @@ public class GroupChatServer {
 
     public void sendInfoToOthers(String msg, SocketChannel socketChannel) throws IOException {
         Set<SelectionKey> keys = selector.keys();
-        Iterator<SelectionKey> keyIterator = keys.iterator();
-        while (keyIterator.hasNext()) {
-            SelectionKey key = keyIterator.next();
+        for (SelectionKey key : keys) {
             Channel channel = key.channel();
             if (channel instanceof SocketChannel && channel != socketChannel) {
+                SocketChannel dest = (SocketChannel) channel;
                 ByteBuffer byteBuffer = ByteBuffer.wrap(msg.getBytes());
-                ((SocketChannel) channel).write(byteBuffer);
+                dest.write(byteBuffer);
             }
         }
     }
 
     public void invoke() throws IOException {
-        if (selector.select(1000) > 0) {
+        if (selector.select() > 0) {
             Set<SelectionKey> selectionKeys = selector.selectedKeys();
             Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
             while (keyIterator.hasNext()) {
@@ -57,22 +56,28 @@ public class GroupChatServer {
                     System.out.println(socketChannel.getRemoteAddress() + "上线了");
                 }
                 if (selectionKey.isReadable())  {
-                    SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
-                    ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
-                    socketChannel.read(byteBuffer);
-                    String msg = new String(byteBuffer.array());
-                    System.out.println("from 客户端：" + socketChannel.getRemoteAddress() +" message: " + msg);
-                    sendInfoToOthers(msg, socketChannel);
+                    SocketChannel socketChannel = null;
+                    try {
+                        socketChannel = (SocketChannel) selectionKey.channel();
+                        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+                        socketChannel.read(byteBuffer);
+                        String msg = new String(byteBuffer.array());
+                        System.out.println("from 客户端：" + socketChannel.getRemoteAddress() +" message: " + msg);
+                        sendInfoToOthers(msg, socketChannel);
+                    } catch (IOException e) {
+                        System.out.println(socketChannel.getRemoteAddress() + " 离线了");
+                        selectionKey.cancel();
+                        socketChannel.close();
+                    }
                 }
                 keyIterator.remove();
             }
-        } else {
-            System.out.println("1s无客户端连接");
         }
     }
 
     public static void main(String[] args) throws IOException {
         GroupChatServer groupChatServer = new GroupChatServer();
+        groupChatServer.listen(serverSocketChannel);
         while (true) {
             groupChatServer.invoke();
         }

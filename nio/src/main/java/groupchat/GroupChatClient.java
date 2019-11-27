@@ -23,19 +23,19 @@ public class GroupChatClient {
 
     private static final String HOST = "127.0.0.1";
 
-    private static final int PORT = 8888;
+    private static final int PORT = 8777;
 
     public GroupChatClient() throws IOException {
         selector = Selector.open();
-        socketChannel = SocketChannel.open(new InetSocketAddress(HOST, PORT));
+        socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(false);
-        socketChannel.register(selector, SelectionKey.OP_READ);
-    }
-
-    public void connect() throws IOException {
-        if (!socketChannel.connect(new InetSocketAddress(HOST, PORT))) {
-            System.out.println("连接失败");
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(HOST, PORT);
+        if (!socketChannel.connect(inetSocketAddress)) {
+            while (!socketChannel.finishConnect()) {
+                System.out.println("因为连接需要事件，客户端不会阻塞，可以做其他工作");
+            }
         }
+        socketChannel.register(selector, SelectionKey.OP_READ);
     }
 
     public void receive() throws IOException {
@@ -62,10 +62,19 @@ public class GroupChatClient {
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         GroupChatClient groupChatClient = new GroupChatClient();
-        while (true) {
+        new Thread(() -> {
+            while (true) {
+                try {
+                    groupChatClient.receive();
+                    Thread.sleep(3000);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
 
-        }
+        groupChatClient.send();
     }
 }
