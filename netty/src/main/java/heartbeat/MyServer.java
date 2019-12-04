@@ -48,11 +48,11 @@ public class MyServer {
                     通过调用(触发)下一个handler 的 userEventTiggered , 在该方法中去处理 IdleStateEvent(读空闲，写空闲，读写空闲)
                      */
                             socketChannel.pipeline()
-                                    .addLast(new IdleStateHandler(3, 3, 5, TimeUnit.SECONDS))
-                                    .addLast(null);
+                                    .addLast(new IdleStateHandler(5, 8, 10, TimeUnit.SECONDS))
+                                    .addLast(new MyServerHandler());
                         }
                     });
-            ChannelFuture channelFuture = serverBootstrap.bind(7777).sync();
+            ChannelFuture channelFuture = serverBootstrap.bind(7000).sync();
             channelFuture.channel().closeFuture().sync();
         } finally {
             bossGroup.shutdownGracefully();
